@@ -1,0 +1,30 @@
+services:
+  aim:
+    image: aimstack/aim:latest
+    container_name: aim
+    restart: unless-stopped
+    networks:
+      - serve
+    ports:
+      - "43800:43800"
+      - "53800:53800"
+    entrypoint: ["sh", "-c"]
+    command: ["aim server -h 0.0.0.0 & aim up -h 0.0.0.0"]
+    volumes:
+      - "/etc/timezone:/etc/timezone:ro"
+      - "/etc/localtime:/etc/localtime:ro"
+      - "./data:/opt/aim"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.aim-ui.rule=Host(`aim.${WEB_DOMAIN}`)"
+      - "traefik.http.routers.aim-ui.service=aim-ui"
+      - "traefik.http.services.aim-ui.loadbalancer.server.port=43800"
+      - "traefik.http.routers.aim-server.rule=Host(`aim.${WEB_DOMAIN}`) && Path(`/api`)"
+      - "traefik.http.routers.aim-server.service=aim-server"
+      - "traefik.http.services.aim-server.loadbalancer.server.port=53800"
+      - "com.centurylinklabs.watchtower.enable=true"
+
+networks:
+  serve:
+    name: serve
+    external: true
